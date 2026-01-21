@@ -4,47 +4,68 @@ void main() {
   runApp(const MyApp());
 }
 
-/* -------------------- МОДЕЛЬ -------------------- */
+/* -------------------- МОДЕЛЬ ТОВАРА -------------------- */
 
 class Product {
   final String name;
   final int price;
-  final IconData icon;
+  final String category;
 
-  const Product(this.name, this.price, this.icon);
+  Product(this.name, this.price, this.category);
 }
 
 /* -------------------- КОРЗИНА -------------------- */
 
 List<Product> cart = [];
 
-/* -------------------- APP -------------------- */
+/* -------------------- ПРИЛОЖЕНИЕ -------------------- */
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const ShopPage(),
+      home: ShopPage(),
     );
   }
 }
 
 /* -------------------- МАГАЗИН -------------------- */
 
-class ShopPage extends StatelessWidget {
+class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
 
-  static const List<Product> products = [
-    Product('Компьютер', 250000, Icons.computer),
-    Product('Смартфон', 80000, Icons.smartphone),
-    Product('Наушники', 15000, Icons.headphones),
-    Product('Часы', 25000, Icons.watch),
-    Product('Клавиатура', 8000, Icons.keyboard),
-    Product('Игровая мышь', 3000, Icons.mouse),
+  @override
+  State<ShopPage> createState() => _ShopPageState();
+}
+
+class _ShopPageState extends State<ShopPage> {
+  String selectedCategory = 'Все';
+
+  final List<Product> products = [
+    Product('Ноутбук', 150000, 'Компьютеры'),
+    Product('Компьютер', 220000, 'Компьютеры'),
+    Product('Смартфон', 80000, 'Телефоны'),
+    Product('Наушники', 15000, 'Аксессуары'),
+    Product('Микрофон', 12000, 'Аксессуары'),
+    Product('Игровой коврик', 7000, 'Игры'),
+    Product('Клавиатура', 8000, 'Игры'),
+    Product('Мышь', 3000, 'Игры'),
+
+    // НОВАЯ КАТЕГОРИЯ
+    Product('Оперативная память', 100000000, 'Комплектующие'),
   ];
+
+  List<String> get categories {
+    return ['Все', ...{for (var p in products) p.category}];
+  }
+
+  List<Product> get filteredProducts {
+    if (selectedCategory == 'Все') return products;
+    return products.where((p) => p.category == selectedCategory).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,28 +84,63 @@ class ShopPage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: products.length,
-        itemBuilder: (context, index) {
-          final p = products[index];
-          return Card(
-            margin: const EdgeInsets.all(10),
-            child: ListTile(
-              leading: Icon(p.icon, size: 32),
-              title: Text(p.name),
-              subtitle: Text('${p.price} ₸'),
-              trailing: IconButton(
-                icon: const Icon(Icons.add_shopping_cart),
-                onPressed: () {
-                  cart.add(p);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${p.name} добавлен в корзину')),
-                  );
-                },
-              ),
+      body: Column(
+        children: [
+          // КАТЕГОРИИ
+          SizedBox(
+            height: 50,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: categories.map((category) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: ChoiceChip(
+                    label: Text(category),
+                    selected: selectedCategory == category,
+                    onSelected: (_) {
+                      setState(() {
+                        selectedCategory = category;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
             ),
-          );
-        },
+          ),
+
+          // ТОВАРЫ
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredProducts.length,
+              itemBuilder: (context, index) {
+                final product = filteredProducts[index];
+                return Card(
+                  margin: const EdgeInsets.all(10),
+                  child: ListTile(
+                    leading: const Icon(Icons.shopping_bag),
+                    title: Text(product.name),
+                    subtitle:
+                    Text('${product.price} ₸ • ${product.category}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.add_shopping_cart),
+                      onPressed: () {
+                        setState(() {
+                          cart.add(product);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                            Text('${product.name} добавлен в корзину'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -100,18 +156,20 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int get total {
-    int s = 0;
-    for (var i in cart) {
-      s += i.price;
+  int get totalPrice {
+    int sum = 0;
+    for (var item in cart) {
+      sum += item.price;
     }
-    return s;
+    return sum;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Профиль')),
+      appBar: AppBar(
+        title: const Text('Профиль'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -131,9 +189,9 @@ class _ProfilePageState extends State<ProfilePage> {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Корзина (${cart.length})',
-                style:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                '🛒 Корзина (${cart.length})',
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 10),
@@ -144,15 +202,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   : ListView.builder(
                 itemCount: cart.length,
                 itemBuilder: (context, index) {
-                  final p = cart[index];
+                  final item = cart[index];
                   return Card(
                     child: ListTile(
-                      leading: Icon(p.icon),
-                      title: Text(p.name),
-                      subtitle: Text('${p.price} ₸'),
+                      title: Text(item.name),
+                      subtitle: Text('${item.price} ₸'),
                       trailing: IconButton(
-                        icon:
-                        const Icon(Icons.delete, color: Colors.red),
+                        icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
                           setState(() {
                             cart.removeAt(index);
@@ -175,12 +231,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Итого:',
-                        style: TextStyle(color: Colors.white)),
-                    Text('$total ₸',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Итого:',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    Text(
+                      '$totalPrice ₸',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
               ),
@@ -190,4 +250,3 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
-
