@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../data/cart.dart';
 import 'profile_page.dart';
+import 'api_page.dart';
 
 class ShopPage extends StatefulWidget {
   const ShopPage({super.key});
@@ -41,13 +42,21 @@ class _ShopPageState extends State<ShopPage> {
         title: const Text('Магазин'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.cloud),
+            tooltip: 'API',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ApiPage()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const ProfilePage(),
-                ),
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
               );
             },
           ),
@@ -66,41 +75,27 @@ class _ShopPageState extends State<ShopPage> {
                     label: Text(category),
                     selected: selectedCategory == category,
                     onSelected: (_) {
-                      setState(() {
-                        selectedCategory = category;
-                      });
+                      setState(() => selectedCategory = category);
                     },
                   ),
                 );
               }).toList(),
             ),
           ),
-
           Expanded(
             child: ListView.builder(
               itemCount: filteredProducts.length,
               itemBuilder: (context, index) {
                 final product = filteredProducts[index];
                 return Card(
-                  margin: const EdgeInsets.all(10),
                   child: ListTile(
-                    leading: const Icon(Icons.shopping_bag),
                     title: Text(product.name),
                     subtitle:
                     Text('${product.price} ₸ • ${product.category}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.add_shopping_cart),
                       onPressed: () {
-                        setState(() {
-                          cart.add(product);
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${product.name} добавлен в корзину',
-                            ),
-                          ),
-                        );
+                        setState(() => cart.add(product));
                       },
                     ),
                   ),
