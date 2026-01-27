@@ -3,5 +3,11 @@ class Product {
   final int price;
   final String category;
 
-  Product(this.name, this.price, this.category);
+  const Product({
+    required this.name,
+    required this.price,
+    required this.category,
+  });
 }
+
+
