@@ -21,16 +21,7 @@ class AuthService {
       return 'Пользователь с таким логином уже существует';
     }
 
-    String hashedPassword = _hashPassword(password);
-    
-    // ДОБАВЛЕНО ДЛЯ ПРОВЕРКИ:
-    print('--- РЕГИСТРАЦИЯ ---');
-    print('Логин: $login');
-    print('Введенный пароль: $password');
-    print('Хэш, который будет сохранен: $hashedPassword');
-    print('-------------------');
-
-    await prefs.setString('$_userPrefix$login', hashedPassword);
+    await prefs.setString('$_userPrefix$login', _hashPassword(password));
     return null;
   }
 
@@ -43,28 +34,20 @@ class AuthService {
       return false;
     }
 
-    String enteredHash = _hashPassword(password);
-
-    // ДОБАВЛЕНО ДЛЯ ПРОВЕРКИ:
-    print('--- ВХОД В СИСТЕМУ ---');
-    print('Логин: $login');
-    print('Сохраненный хэш в памяти: $storedHash');
-    print('Хэш введенного сейчас пароля: $enteredHash');
-    print('Результат сравнения: ${storedHash == enteredHash}');
-    print('----------------------');
-
-    if (storedHash == enteredHash) {
+    if (storedHash == _hashPassword(password)) {
       await prefs.setString(_currentUserKey, login);
       return true;
     }
     return false;
   }
 
+  // Выход из системы
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_currentUserKey);
   }
 
+  // Получение текущего пользователя
   Future<String?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_currentUserKey);
