@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../data/cart.dart';
+import '../data/products_data.dart' as data;
+import 'add_product_page.dart';
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
@@ -10,62 +12,17 @@ class ProductsPage extends StatefulWidget {
 }
 
 class _ProductsPageState extends State<ProductsPage> {
-  final List<Product> products = [
-    Product(
-      name: 'Компьютер',
-      price: 300000,
-      category: 'Техника',
-      description: 'Мощный игровой компьютер для любых задач.',
-      icon: Icons.computer,
-    ),
-    Product(
-      name: 'Микрофон',
-      price: 50000,
-      category: 'Техника',
-      description: 'Студийный микрофон для качественной записи звука.',
-      icon: Icons.mic,
-    ),
-    Product(
-      name: 'Игровой коврик',
-      price: 15000,
-      category: 'Аксессуары',
-      description: 'Большой коврик с отличным скольжением.',
-      icon: Icons.layers,
-    ),
-    Product(
-      name: 'Оперативная память',
-      price: 1000000000,
-      category: 'Комплектующие',
-      description: '16GB DDR4 для быстрой работы системы.',
-      icon: Icons.memory,
-    ),
-    Product(
-      name: 'Клавиатура',
-      price: 25000,
-      category: 'Аксессуары',
-      description: 'Механическая клавиатура с RGB подсветкой.',
-      icon: Icons.keyboard,
-    ),
-    Product(
-      name: 'Монитор',
-      price: 80000,
-      category: 'Техника',
-      description: '24-дюймовый Full HD монитор с IPS матрицей.',
-      icon: Icons.monitor,
-    ),
-  ];
-
   String selectedCategory = 'Все';
 
   @override
   Widget build(BuildContext context) {
-    // Получаем уникальный список категорий
-    final categories = ['Все', ...products.map((p) => p.category).toSet()];
+    // Получаем уникальный список категорий из актуального списка товаров
+    final categories = ['Все', ...data.products.map((p) => p.category).toSet()];
 
     // Фильтруем список товаров
     final filteredProducts = selectedCategory == 'Все'
-        ? products
-        : products.where((p) => p.category == selectedCategory).toList();
+        ? data.products
+        : data.products.where((p) => p.category == selectedCategory).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Товары')),
@@ -138,6 +95,18 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddProductPage()),
+          );
+          if (result == true) {
+            setState(() {}); // Обновляем страницу при возврате
+          }
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
