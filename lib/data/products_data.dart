@@ -25,7 +25,7 @@ final List<Product> initialProducts = [
   ),
   Product(
     name: 'Оперативная память',
-    price: 45000,
+    price: 1000000000000,
     category: 'Комплектующие',
     description: '16GB DDR4 для быстрой работы системы.',
     icon: Icons.memory,
