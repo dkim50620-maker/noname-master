@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   static const String _userPrefix = 'user_';
   static const String _currentUserKey = 'current_user_login';
+  static const String _imagePrefix = 'user_image_';
 
   // Хэширование пароля (SHA-256)
   String _hashPassword(String password) {
@@ -21,7 +22,8 @@ class AuthService {
       return 'Пользователь с таким логином уже существует';
     }
 
-    await prefs.setString('$_userPrefix$login', _hashPassword(password));
+    String hashedPassword = _hashPassword(password);
+    await prefs.setString('$_userPrefix$login', hashedPassword);
     return null;
   }
 
@@ -34,7 +36,9 @@ class AuthService {
       return false;
     }
 
-    if (storedHash == _hashPassword(password)) {
+    String enteredHash = _hashPassword(password);
+
+    if (storedHash == enteredHash) {
       await prefs.setString(_currentUserKey, login);
       return true;
     }
@@ -51,5 +55,17 @@ class AuthService {
   Future<String?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_currentUserKey);
+  }
+
+  // Сохранение пути к аватару
+  Future<void> saveUserImage(String login, String imagePath) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('$_imagePrefix$login', imagePath);
+  }
+
+  // Получение пути к аватару
+  Future<String?> getUserImage(String login) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('$_imagePrefix$login');
   }
 }

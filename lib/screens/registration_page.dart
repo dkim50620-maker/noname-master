@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../widgets/gradient_background.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -47,31 +48,42 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Регистрация')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _loginController,
-              decoration: const InputDecoration(labelText: 'Логин'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Пароль'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _register,
-                    child: const Text('Зарегистрироваться'),
-                  ),
-          ],
+    return GradientBackground(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Регистрация')),
+        body: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.person_add_outlined, size: 80, color: Colors.white),
+              const SizedBox(height: 30),
+              TextField(
+                controller: _loginController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Логин'),
+              ),
+              const SizedBox(height: 15),
+              TextField(
+                controller: _passwordController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Пароль'),
+                obscureText: true,
+              ),
+              const SizedBox(height: 30),
+              _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _register,
+                        child: const Text('ЗАРЕГИСТРИРОВАТЬСЯ', 
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+            ],
+          ),
         ),
       ),
     );
