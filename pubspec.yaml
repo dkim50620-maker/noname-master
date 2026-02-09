@@ -14,6 +14,8 @@ dependencies:
   shared_preferences: ^2.2.1
   crypto: ^3.0.3
   image_picker: ^1.0.4
+  # Версия 17.0.0+ решает проблему "ambiguous reference" на новых Android SDK
+  flutter_local_notifications: ^17.0.0
 
 
 dev_dependencies:

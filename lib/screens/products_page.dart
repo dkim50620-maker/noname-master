@@ -3,6 +3,7 @@ import '../models/product.dart';
 import '../data/cart.dart';
 import '../data/products_data.dart' as data;
 import '../widgets/gradient_background.dart';
+import '../services/notification_service.dart';
 import 'add_product_page.dart';
 
 class ProductsPage extends StatefulWidget {
@@ -17,10 +18,8 @@ class _ProductsPageState extends State<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Получаем уникальный список категорий из актуального списка товаров
     final categories = ['Все', ...data.products.map((p) => p.category).toSet()];
 
-    // Фильтруем список товаров
     final filteredProducts = selectedCategory == 'Все'
         ? data.products
         : data.products.where((p) => p.category == selectedCategory).toList();
@@ -35,7 +34,6 @@ class _ProductsPageState extends State<ProductsPage> {
         ),
         body: Column(
           children: [
-            // Горизонтальный список категорий
             SizedBox(
               height: 60,
               child: ListView.builder(
@@ -55,17 +53,19 @@ class _ProductsPageState extends State<ProductsPage> {
                           selectedCategory = category;
                         });
                       },
-                      backgroundColor: Colors.white.withOpacity(0.1),
-                      selectedColor: Colors.blueAccent.withOpacity(0.5),
+                      // Исправленные цвета для видимости текста
+                      backgroundColor: Colors.white,
+                      selectedColor: Colors.blueAccent,
+                      showCheckmark: false,
                       labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   );
                 },
               ),
             ),
-            // Список товаров
             Expanded(
               child: ListView.builder(
                 itemCount: filteredProducts.length,
@@ -101,11 +101,15 @@ class _ProductsPageState extends State<ProductsPage> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Кнопка добавления в корзину
                           IconButton(
                             icon: const Icon(Icons.add_shopping_cart, color: Colors.white),
                             onPressed: () {
                               cart.add(p);
+                              NotificationService.showNotification(
+                                id: p.hashCode,
+                                title: 'Товар в корзине!',
+                                body: 'Вы добавили "${p.name}" в корзину.',
+                              );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('${p.name} добавлен в корзину'),
@@ -114,7 +118,6 @@ class _ProductsPageState extends State<ProductsPage> {
                               );
                             },
                           ),
-                          // Кнопка удаления товара
                           IconButton(
                             icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                             onPressed: () {
@@ -138,7 +141,7 @@ class _ProductsPageState extends State<ProductsPage> {
               MaterialPageRoute(builder: (context) => const AddProductPage()),
             );
             if (result == true) {
-              setState(() {}); // Обновляем страницу при возврате
+              setState(() {});
             }
           },
           child: const Icon(Icons.add, color: Colors.white),
@@ -167,10 +170,12 @@ class _ProductsPageState extends State<ProductsPage> {
               setState(() {
                 data.products.remove(product);
               });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Товар "${product.name}" удален')),
+              NotificationService.showNotification(
+                id: product.hashCode,
+                title: 'Товар удален',
+                body: 'Вы удалили "${product.name}" из списка товаров.',
               );
+              Navigator.pop(context);
             },
             child: const Text('УДАЛИТЬ', style: TextStyle(color: Colors.redAccent)),
           ),
