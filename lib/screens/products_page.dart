@@ -4,6 +4,7 @@ import '../data/cart.dart';
 import '../data/products_data.dart' as data;
 import '../widgets/gradient_background.dart';
 import '../services/notification_service.dart';
+import '../services/kaspi_service.dart';
 import 'add_product_page.dart';
 
 class ProductsPage extends StatefulWidget {
@@ -15,6 +16,26 @@ class ProductsPage extends StatefulWidget {
 
 class _ProductsPageState extends State<ProductsPage> {
   String selectedCategory = 'Все';
+  bool _isSyncing = false;
+
+  Future<void> _syncWithKaspi() async {
+    setState(() => _isSyncing = true);
+    
+    final success = await KaspiService.syncProducts();
+    
+    if (mounted) {
+      setState(() => _isSyncing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success 
+            ? 'Товары успешно синхронизированы с Kaspi!' 
+            : 'Ошибка синхронизации с Kaspi'),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+      if (success) setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +52,18 @@ class _ProductsPageState extends State<ProductsPage> {
           title: const Text('Товары'),
           backgroundColor: Colors.transparent,
           elevation: 0,
+          actions: [
+            _isSyncing 
+              ? const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.sync, color: Colors.white),
+                  onPressed: _syncWithKaspi,
+                  tooltip: 'Синхронизировать с Kaspi',
+                ),
+          ],
         ),
         body: Column(
           children: [
@@ -53,7 +86,6 @@ class _ProductsPageState extends State<ProductsPage> {
                           selectedCategory = category;
                         });
                       },
-                      // Исправленные цвета для видимости текста
                       backgroundColor: Colors.white,
                       selectedColor: Colors.blueAccent,
                       showCheckmark: false,
@@ -95,6 +127,8 @@ class _ProductsPageState extends State<ProductsPage> {
                             '${p.category} • ${p.price} ₸',
                             style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w500),
                           ),
+                          if (p.sku != null)
+                            Text('Артикул: ${p.sku}', style: const TextStyle(color: Colors.white38, fontSize: 10)),
                         ],
                       ),
                       isThreeLine: true,
@@ -170,6 +204,7 @@ class _ProductsPageState extends State<ProductsPage> {
               setState(() {
                 data.products.remove(product);
               });
+              data.saveProducts(); // Сохраняем удаление
               NotificationService.showNotification(
                 id: product.hashCode,
                 title: 'Товар удален',

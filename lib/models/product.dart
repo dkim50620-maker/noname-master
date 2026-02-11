@@ -6,6 +6,7 @@ class Product {
   final String category;
   final String description;
   final IconData icon;
+  final String? sku; // Артикул из Каспи
 
   Product({
     required this.name,
@@ -13,6 +14,7 @@ class Product {
     required this.category,
     required this.description,
     required this.icon,
+    this.sku,
   });
 
   Map<String, dynamic> toJson() {
@@ -22,6 +24,7 @@ class Product {
       'category': category,
       'description': description,
       'iconCode': icon.codePoint,
+      'sku': sku,
     };
   }
 
@@ -32,6 +35,7 @@ class Product {
       category: json['category'],
       description: json['description'],
       icon: IconData(json['iconCode'], fontFamily: 'MaterialIcons'),
+      sku: json['sku'],
     );
   }
 }
