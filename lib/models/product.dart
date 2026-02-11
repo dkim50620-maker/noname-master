@@ -14,4 +14,24 @@ class Product {
     required this.description,
     required this.icon,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'price': price,
+      'category': category,
+      'description': description,
+      'iconCode': icon.codePoint,
+    };
+  }
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      name: json['name'],
+      price: json['price'],
+      category: json['category'],
+      description: json['description'],
+      icon: IconData(json['iconCode'], fontFamily: 'MaterialIcons'),
+    );
+  }
 }

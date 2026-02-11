@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'screens/login_page.dart';
 import 'services/notification_service.dart';
+import 'data/products_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init(); // Инициализация уведомлений
+  await NotificationService.init();
+  await loadProducts(); // Загружаем сохраненные товары при старте
   runApp(const MyApp());
 }
 
@@ -18,7 +20,7 @@ class MyApp extends StatelessWidget {
       title: 'Магазин',
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: Colors.transparent, // Позволяет видеть градиент фона
+        scaffoldBackgroundColor: Colors.transparent,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
           elevation: 0,

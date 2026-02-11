@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product.dart';
 
 final List<Product> initialProducts = [
@@ -25,7 +27,7 @@ final List<Product> initialProducts = [
   ),
   Product(
     name: 'Оперативная память',
-    price: 1000000000000,
+    price: 45000,
     category: 'Комплектующие',
     description: '16GB DDR4 для быстрой работы системы.',
     icon: Icons.memory,
@@ -46,5 +48,21 @@ final List<Product> initialProducts = [
   ),
 ];
 
-// Глобальный список товаров (в реальном приложении это был бы State Management или БД)
 List<Product> products = List.from(initialProducts);
+
+Future<void> saveProducts() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String encodedData = jsonEncode(
+    products.map((product) => product.toJson()).toList(),
+  );
+  await prefs.setString('saved_products', encodedData);
+}
+
+Future<void> loadProducts() async {
+  final prefs = await SharedPreferences.getInstance();
+  final String? savedData = prefs.getString('saved_products');
+  if (savedData != null) {
+    final List<dynamic> decodedData = jsonDecode(savedData);
+    products = decodedData.map((item) => Product.fromJson(item)).toList();
+  }
+}

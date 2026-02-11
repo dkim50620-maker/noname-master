@@ -26,7 +26,6 @@ class NotificationService {
 
     await _notificationsPlugin.initialize(initializationSettings);
 
-    // Разрешения для Android 13+
     if (Platform.isAndroid) {
       final androidPlugin = _notificationsPlugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
@@ -55,7 +54,6 @@ class NotificationService {
 
     const NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
-      // Для Windows/macOS используются Darwin настройки
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),
     );

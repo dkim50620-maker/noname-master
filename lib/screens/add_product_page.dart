@@ -18,39 +18,42 @@ class _AddProductPageState extends State<AddProductPage> {
   final _descriptionController = TextEditingController();
   
   IconData _selectedIcon = Icons.computer;
+  String? _selectedExistingCategory;
 
   final List<IconData> _availableIcons = [
-    Icons.computer,
-    Icons.mic,
-    Icons.layers,
-    Icons.memory,
-    Icons.keyboard,
-    Icons.monitor,
-    Icons.mouse,
-    Icons.headphones,
-    Icons.speaker,
-    Icons.print,
-    Icons.smartphone,
-    Icons.tv,
-    Icons.videogame_asset,
-    Icons.watch,
+    Icons.computer, Icons.mic, Icons.layers, Icons.memory, Icons.keyboard,
+    Icons.monitor, Icons.mouse, Icons.headphones, Icons.speaker, Icons.print,
+    Icons.smartphone, Icons.tv, Icons.videogame_asset, Icons.watch,
   ];
 
-  void _saveProduct() {
+  late List<String> _existingCategories;
+
+  @override
+  void initState() {
+    super.initState();
+    // Получаем список текущих категорий
+    _existingCategories = data.products.map((p) => p.category).toSet().toList();
+  }
+
+  void _saveProduct() async {
     if (_formKey.currentState!.validate()) {
+      // Приоритет выбранной существующей категории, если новая не введена
+      String finalCategory = _categoryController.text.isNotEmpty 
+          ? _categoryController.text 
+          : (_selectedExistingCategory ?? 'Общее');
+
       final newProduct = Product(
         name: _nameController.text,
         price: int.parse(_priceController.text),
-        category: _categoryController.text,
+        category: finalCategory,
         description: _descriptionController.text,
         icon: _selectedIcon,
       );
 
-      setState(() {
-        data.products.add(newProduct);
-      });
+      data.products.add(newProduct);
+      await data.saveProducts(); // СОХРАНЯЕМ В ПАМЯТЬ
 
-      Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, true);
     }
   }
 
@@ -78,34 +81,44 @@ class _AddProductPageState extends State<AddProductPage> {
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: 'Цена (₸)'),
                   keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Введите цену';
-                    if (int.tryParse(value) == null) return 'Введите корректное число';
-                    return null;
-                  },
+                  validator: (value) => value == null || value.isEmpty ? 'Введите цену' : null,
                 ),
                 const SizedBox(height: 15),
+                
+                // ВЫБОР СУЩЕСТВУЮЩЕЙ КАТЕГОРИИ
+                const Text('Выберите категорию:', style: TextStyle(color: Colors.white70)),
+                DropdownButtonFormField<String>(
+                  value: _selectedExistingCategory,
+                  dropdownColor: const Color(0xFF1A237E),
+                  style: const TextStyle(color: Colors.white),
+                  items: _existingCategories.map((cat) => DropdownMenuItem(
+                    value: cat,
+                    child: Text(cat),
+                  )).toList(),
+                  onChanged: (val) => setState(() => _selectedExistingCategory = val),
+                  decoration: InputDecoration(
+                    hintText: 'Выбрать из списка',
+                    hintStyle: const TextStyle(color: Colors.white38),
+                  ),
+                ),
+                const Center(child: Text('ИЛИ', style: TextStyle(color: Colors.white38, fontSize: 10))),
+                
+                // ВВОД НОВОЙ КАТЕГОРИИ
                 TextFormField(
                   controller: _categoryController,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Категория'),
-                  validator: (value) => value == null || value.isEmpty ? 'Введите категорию' : null,
+                  decoration: const InputDecoration(labelText: 'Новая категория'),
                 ),
+                
                 const SizedBox(height: 15),
                 TextFormField(
                   controller: _descriptionController,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: 'Описание'),
-                  maxLines: 3,
-                  validator: (value) => value == null || value.isEmpty ? 'Введите описание' : null,
+                  maxLines: 2,
                 ),
-                const SizedBox(height: 25),
-                const Text(
-                  'Выберите иконку:', 
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)
-                ),
-                const SizedBox(height: 10),
-                // Горизонтальный выбор иконок как на скриншоте
+                const SizedBox(height: 20),
+                const Text('Иконка:', style: TextStyle(color: Colors.white)),
                 SizedBox(
                   height: 60,
                   child: ListView.builder(
@@ -113,42 +126,23 @@ class _AddProductPageState extends State<AddProductPage> {
                     itemCount: _availableIcons.length,
                     itemBuilder: (context, index) {
                       final icon = _availableIcons[index];
-                      final isSelected = _selectedIcon == icon;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 10),
-                        child: ChoiceChip(
-                          label: Icon(
-                            icon, 
-                            color: isSelected ? Colors.white : Colors.blueAccent,
-                            size: 28,
-                          ),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              _selectedIcon = icon;
-                            });
-                          },
-                          selectedColor: Colors.blueAccent.withOpacity(0.5),
-                          backgroundColor: Colors.white.withOpacity(0.1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(
-                              color: isSelected ? Colors.blueAccent : Colors.white12,
-                            ),
-                          ),
-                          showCheckmark: false,
-                        ),
+                      return ChoiceChip(
+                        label: Icon(icon, color: _selectedIcon == icon ? Colors.white : Colors.blueAccent),
+                        selected: _selectedIcon == icon,
+                        onSelected: (_) => setState(() => _selectedIcon = icon),
+                        selectedColor: Colors.blueAccent,
+                        backgroundColor: Colors.white12,
                       );
                     },
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: _saveProduct,
-                    child: const Text('СОХРАНИТЬ ТОВАР', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('СОХРАНИТЬ'),
                   ),
                 ),
               ],
@@ -157,14 +151,5 @@ class _AddProductPageState extends State<AddProductPage> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _priceController.dispose();
-    _categoryController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 }
