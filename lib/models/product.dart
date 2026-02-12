@@ -5,15 +5,17 @@ class Product {
   final int price;
   final String category;
   final String description;
-  final IconData icon;
-  final String? sku; // Артикул из Каспи
+  final IconData? icon;      // Для локально созданных товаров
+  final String? imageUrl;   // Для товаров из Kaspi
+  final String? sku;        // Артикул из Kaspi
 
   Product({
     required this.name,
     required this.price,
     required this.category,
     required this.description,
-    required this.icon,
+    this.icon,
+    this.imageUrl,
     this.sku,
   });
 
@@ -23,7 +25,8 @@ class Product {
       'price': price,
       'category': category,
       'description': description,
-      'iconCode': icon.codePoint,
+      'iconCode': icon?.codePoint,
+      'imageUrl': imageUrl,
       'sku': sku,
     };
   }
@@ -34,7 +37,10 @@ class Product {
       price: json['price'],
       category: json['category'],
       description: json['description'],
-      icon: IconData(json['iconCode'], fontFamily: 'MaterialIcons'),
+      icon: json['iconCode'] != null 
+          ? IconData(json['iconCode'], fontFamily: 'MaterialIcons') 
+          : null,
+      imageUrl: json['imageUrl'],
       sku: json['sku'],
     );
   }

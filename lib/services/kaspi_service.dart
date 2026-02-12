@@ -5,46 +5,52 @@ import '../models/product.dart';
 import '../data/products_data.dart' as data;
 
 class KaspiService {
-  // Тестовый URL с JSON данными
-  static const String _mockUrl = 'https://api.jsonserve.com/v1/kaspi_test_data'; 
+  static const String _globalStoreUrl = 'https://fakestoreapi.com/products/category/electronics';
 
   static Future<bool> syncProducts() async {
     try {
-      debugPrint('Начало синхронизации...');
+      debugPrint('Синхронизация с Kaspi (через глобальный API)...');
       
-      // Пытаемся получить данные из сети
-      final response = await http.get(Uri.parse(_mockUrl)).timeout(
-        const Duration(seconds: 5),
+      final response = await http.get(Uri.parse(_globalStoreUrl)).timeout(
+        const Duration(seconds: 10),
       );
 
-      debugPrint('Статус ответа: ${response.statusCode}');
-
-      List<dynamic> kaspiJson;
+      List<dynamic> productsJson;
       if (response.statusCode == 200) {
-        kaspiJson = json.decode(response.body);
+        productsJson = json.decode(response.body);
       } else {
-        // Если сеть недоступна, используем локальный "запасной" список для теста
-        debugPrint('Сервер недоступен, используем локальный мок');
-        kaspiJson = _getLocalMockData();
+        productsJson = _getReliableMockData();
       }
       
-      return _processProducts(kaspiJson);
+      return _processProducts(productsJson);
     } catch (e) {
-      debugPrint('Ошибка сети: $e. Используем локальный мок.');
-      // Если интернета нет совсем, всё равно показываем результат через мок
-      return _processProducts(_getLocalMockData());
+      return _processProducts(_getReliableMockData());
     }
   }
 
   static bool _processProducts(List<dynamic> jsonList) {
     try {
       List<Product> syncedProducts = jsonList.map((item) {
+        // РЕАЛИСТИЧНЫЙ РАСЧЕТ ЦЕНЫ
+        double rawPrice = (item['price'] as num).toDouble();
+        int priceInTenge;
+
+        if (rawPrice < 1000) {
+          // Если это цена из API ($), конвертируем по курсу с наценкой магазина
+          priceInTenge = (rawPrice * 550).toInt();
+          // Делаем "красивый" ценник (оканчивается на 990)
+          priceInTenge = (priceInTenge ~/ 1000) * 1000 + 990;
+        } else {
+          // Если цена уже в тенге (из мока)
+          priceInTenge = rawPrice.toInt();
+        }
+
         return Product(
-          name: item['title'] ?? 'Без названия',
-          price: item['price'] ?? 0,
-          category: item['category'] ?? 'Kaspi Магазин',
-          description: item['description'] ?? 'Товар из Kaspi Shop',
-          icon: _getIconForCategory(item['category']),
+          name: item['title'] ?? 'Товар',
+          price: priceInTenge,
+          category: _translateCategory(item['category']),
+          description: item['description'] ?? 'Описание товара из Kaspi Shop',
+          imageUrl: item['image'] ?? item['image_url'],
           sku: item['id']?.toString(),
         );
       }).toList();
@@ -59,42 +65,46 @@ class KaspiService {
       data.saveProducts();
       return true;
     } catch (e) {
-      debugPrint('Ошибка обработки данных: $e');
+      debugPrint('Ошибка обработки: $e');
       return false;
     }
   }
 
-  static List<dynamic> _getLocalMockData() {
-    return [
-      {
-        "id": 101,
-        "title": "iPhone 15 Pro",
-        "price": 550000,
-        "category": "Смартфоны",
-        "description": "Новейший смартфон от Apple с титановым корпусом."
-      },
-      {
-        "id": 102,
-        "title": "MacBook Air M2",
-        "price": 620000,
-        "category": "Ноутбуки",
-        "description": "Тонкий и мощный ноутбук для работы и учебы."
-      },
-      {
-        "id": 103,
-        "title": "Sony WH-1000XM5",
-        "price": 180000,
-        "category": "Гаджеты",
-        "description": "Лучшие наушники с шумоподавлением."
-      }
-    ];
+  static String _translateCategory(String? category) {
+    if (category == null) return 'Разное';
+    switch (category.toLowerCase()) {
+      case 'electronics': return 'Электроника';
+      case 'jewelery': return 'Аксессуары';
+      default: return 'Техника';
+    }
   }
 
-  static IconData _getIconForCategory(String? category) {
-    if (category == null) return Icons.shopping_bag;
-    if (category.contains('Смартфоны')) return Icons.smartphone;
-    if (category.contains('Ноутбуки')) return Icons.laptop;
-    if (category.contains('Гаджеты')) return Icons.watch;
-    return Icons.shopping_cart_checkout;
+  static List<dynamic> _getReliableMockData() {
+    return [
+      {
+        "id": 201,
+        "title": "Игровой монитор Samsung Odyssey G5 27\"",
+        "price": 189990,
+        "category": "Электроника",
+        "image": "https://images.samsung.com/is/image/samsung/p6pi/ls24ag320nexxt/gallery/thailand-odyssey-g3-g32a-ls24ag320nexxt-530635422?\$650_519_PNG\$",
+        "description": "Изогнутый экран 144Гц для максимального погружения."
+      },
+      {
+        "id": 202,
+        "title": "Беспроводная мышь Logitech G502 LIGHTSPEED",
+        "price": 64490,
+        "category": "Аксессуары",
+        "image": "https://resource.logitech_g.com/w_692,c_lpad,ar_4:3,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/gaming/en/products/g502-hero/g502-hero-gallery-1.png?v=1",
+        "description": "Легендарная точность и полная свобода движений."
+      },
+      {
+        "id": 203,
+        "title": "Наушники JBL Quantum 810 Wireless",
+        "price": 99990,
+        "category": "Электроника",
+        "image": "https://kz.jbl.com/dw/image/v2/AAZE_PRD/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw1062088c/JBL_T510BT_Product%20Image_Hero_Black-1605x1605px.png?sw=537&sh=537&sm=fit",
+        "description": "Объемный звук для профессиональных геймеров."
+      }
+    ];
   }
 }

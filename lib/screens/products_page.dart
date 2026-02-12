@@ -20,16 +20,12 @@ class _ProductsPageState extends State<ProductsPage> {
 
   Future<void> _syncWithKaspi() async {
     setState(() => _isSyncing = true);
-    
     final success = await KaspiService.syncProducts();
-    
     if (mounted) {
       setState(() => _isSyncing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success 
-            ? 'Товары успешно синхронизированы с Kaspi!' 
-            : 'Ошибка синхронизации с Kaspi'),
+          content: Text(success ? 'Синхронизация с Kaspi завершена!' : 'Ошибка синхронизации'),
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
@@ -40,7 +36,6 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   Widget build(BuildContext context) {
     final categories = ['Все', ...data.products.map((p) => p.category).toSet()];
-
     final filteredProducts = selectedCategory == 'Все'
         ? data.products
         : data.products.where((p) => p.category == selectedCategory).toList();
@@ -59,9 +54,8 @@ class _ProductsPageState extends State<ProductsPage> {
                   child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
                 )
               : IconButton(
-                  icon: const Icon(Icons.sync, color: Colors.white),
+                  icon: const Icon(Icons.sync),
                   onPressed: _syncWithKaspi,
-                  tooltip: 'Синхронизировать с Kaspi',
                 ),
           ],
         ),
@@ -81,18 +75,10 @@ class _ProductsPageState extends State<ProductsPage> {
                     child: ChoiceChip(
                       label: Text(category),
                       selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          selectedCategory = category;
-                        });
-                      },
+                      onSelected: (selected) => setState(() => selectedCategory = category),
                       backgroundColor: Colors.white,
                       selectedColor: Colors.blueAccent,
                       showCheckmark: false,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black87,
-                        fontWeight: FontWeight.bold,
-                      ),
                     ),
                   );
                 },
@@ -108,27 +94,32 @@ class _ProductsPageState extends State<ProductsPage> {
                     margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
-                      leading: Icon(p.icon, size: 40, color: Colors.greenAccent),
-                      title: Text(
-                        p.name, 
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+                      leading: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        // ОТОБРАЖЕНИЕ КАРТИНКИ ИЛИ ИКОНКИ
+                        child: p.imageUrl != null 
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                p.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white30),
+                              ),
+                            )
+                          : Icon(p.icon ?? Icons.shopping_bag, color: Colors.greenAccent, size: 30),
                       ),
+                      title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            p.description, 
-                            maxLines: 2, 
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white70),
-                          ),
+                          Text(p.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70)),
                           const SizedBox(height: 4),
-                          Text(
-                            '${p.category} • ${p.price} ₸',
-                            style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w500),
-                          ),
-                          if (p.sku != null)
-                            Text('Артикул: ${p.sku}', style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                          Text('${p.category} • ${p.price} ₸', style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       isThreeLine: true,
@@ -144,18 +135,13 @@ class _ProductsPageState extends State<ProductsPage> {
                                 title: 'Товар в корзине!',
                                 body: 'Вы добавили "${p.name}" в корзину.',
                               );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('${p.name} добавлен в корзину'),
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
                             },
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                             onPressed: () {
-                              _showDeleteDialog(p);
+                              setState(() => data.products.remove(p));
+                              data.saveProducts();
                             },
                           ),
                         ],
@@ -169,52 +155,9 @@ class _ProductsPageState extends State<ProductsPage> {
         ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.blueAccent,
-          onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddProductPage()),
-            );
-            if (result == true) {
-              setState(() {});
-            }
-          },
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddProductPage())),
           child: const Icon(Icons.add, color: Colors.white),
         ),
-      ),
-    );
-  }
-
-  void _showDeleteDialog(Product product) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A237E),
-        title: const Text('Удаление', style: TextStyle(color: Colors.white)),
-        content: Text(
-          'Вы уверены, что хотите удалить "${product.name}"?',
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('ОТМЕНА', style: TextStyle(color: Colors.white70)),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                data.products.remove(product);
-              });
-              data.saveProducts(); // Сохраняем удаление
-              NotificationService.showNotification(
-                id: product.hashCode,
-                title: 'Товар удален',
-                body: 'Вы удалили "${product.name}" из списка товаров.',
-              );
-              Navigator.pop(context);
-            },
-            child: const Text('УДАЛИТЬ', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
       ),
     );
   }
